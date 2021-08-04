@@ -49,17 +49,17 @@ class AT_net(nn.Module):
     def forward(self, example_landmark, audio):
         hidden = ( torch.autograd.Variable(torch.zeros(3, audio.size(0), 256).cuda()),
                       torch.autograd.Variable(torch.zeros(3, audio.size(0), 256).cuda()))
-        example_landmark_f = self.lmark_encoder(example_landmark)
+        example_landmark_f = self.lmark_encoder(example_landmark)                             ## 将example_landmark encoder
         lstm_input = []
         for step_t in range(audio.size(1)):
             current_audio = audio[ : ,step_t , :, :].unsqueeze(1)
-            current_feature = self.audio_eocder(current_audio)
-            current_feature = current_feature.view(current_feature.size(0), -1)
+            current_feature = self.audio_eocder(current_audio)                                ## audio encoder
+            current_feature = current_feature.view(current_feature.size(0), -1)               ## pytorch的view方法，改变其维数
             current_feature = self.audio_eocder_fc(current_feature)
-            features = torch.cat([example_landmark_f,  current_feature], 1)
+            features = torch.cat([example_landmark_f,  current_feature], 1)                   ## cat函数，两个shape（2，3）进行cat（其中dim=0），则output shape（4，3）
             lstm_input.append(features)
-        lstm_input = torch.stack(lstm_input, dim = 1)
-        lstm_out, _ = self.lstm(lstm_input, hidden)
+        lstm_input = torch.stack(lstm_input, dim = 1)             ## stack()函数会增加维度，如stack()两个shape（3，3），dim=0，output shape（2，3，3）
+        lstm_out, _ = self.lstm(lstm_input, hidden)            ## lstm处理
         fc_out   = []
         for step_t in range(audio.size(1)):
             fc_in = lstm_out[:,step_t,:]
