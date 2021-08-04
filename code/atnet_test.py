@@ -131,10 +131,10 @@ def test():
                 audio = Variable(audio.float()).cuda()
                 example_landmark = Variable(example_landmark.float()).cuda() 
             if config.lstm:
-                fake_lmark= generator(example_landmark, audio)
+                fake_lmark= generator(example_landmark, audio)                                    ## 返回了由example landmark，audio生成预测的landmark
                 fake_lmark = fake_lmark.view(fake_lmark.size(0) * fake_lmark.size(1) , 6) 
                 fake_lmark[:, 1:6] *= 2*torch.FloatTensor(np.array([1.2, 1.4, 1.6, 1.8, 2.0])).cuda() 
-                fake_lmark = torch.mm( fake_lmark, pca.t() )
+                fake_lmark = torch.mm( fake_lmark, pca.t() )          ## 矩阵惩罚
                 fake_lmark = fake_lmark + mean.expand_as(fake_lmark)
                 fake_lmark = fake_lmark.view(config.batch_size, 16, 136)
                 fake_lmark = fake_lmark.data.cpu().numpy() 
@@ -147,7 +147,7 @@ def test():
                 for indx in range(config.batch_size):
                     for jj in range(16):
                         name = "{}real_{}_{}_{}.png".format(config.sample_dir,step, indx,jj)
-                        utils.plot_flmarks(lmark[indx,jj], name, xLim, yLim, xLab, yLab, figsize=(10, 10))
+                        utils.plot_flmarks(lmark[indx,jj], name, xLim, yLim, xLab, yLab, figsize=(10, 10))      ## 绘出landmark
                         name = "{}fake_{}_{}_{}.png".format(config.sample_dir,step, indx,jj)
                         utils.plot_flmarks(fake_lmark[indx,jj], name, xLim, yLim, xLab, yLab, figsize=(10, 10))
             else:
