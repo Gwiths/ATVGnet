@@ -116,7 +116,7 @@ def test():
 			    example_img = Variable(example_img.float()).cuda() 
 			    landmarks = Variable(landmarks.float()).cuda()
 			    example_landmark = Variable(example_landmark.float()).cuda()
-			fake_im, atts, colors, lmark_att = generator(example_img,  landmarks, example_landmark)
+			fake_im, atts, colors, lmark_att = generator(example_img,  landmarks, example_landmark)   ## 生成fake_im
 
 			fake_store = fake_im.data.contiguous().view(config.batch_size*16,3,128,128)
 			real_store = real_im.data.contiguous().view(config.batch_size * 16,3,128,128)
