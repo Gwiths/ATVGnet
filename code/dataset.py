@@ -285,7 +285,7 @@ class LRWdataset1D_single_gt(data.Dataset):
             return example_img, example_landmark, right_img,right_landmark
                 
         
-class LRWdataset1D_lstm_gt(data.Dataset):
+class LRWdataset1D_lstm_gt(data.Dataset):                        ## test中使用的dataset， __getitem__函数使对象能够通过index的方式随机访问
     def __init__(self,
                  dataset_dir,
                  output_shape=[128, 128],
@@ -302,7 +302,7 @@ class LRWdataset1D_lstm_gt(data.Dataset):
             self.train_data = pickle.load(_file)
             _file.close()
         elif self.train =='test':
-            _file = open(os.path.join(dataset_dir, "new_16_full_gt_test.pkl"), "rb")
+            _file = open(os.path.join(dataset_dir, "new_16_full_gt_test.pkl"), "rb")             ##new_16_full_gt_test.pkl存储测试数据集
             self.test_data = pickle.load(_file)
             _file.close()
         elif self.train =='demo' :
