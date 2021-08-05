@@ -224,7 +224,7 @@ class VG_net(nn.Module):
         model = []
         n_downsampling = 4
         mult = 2**(n_downsampling -1  )
-        for i in range(n_blocks):
+        for i in range(n_blocks):                         ## default n_blocks = 9    所以9个resnet
             model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
 
         for i in range(n_downsampling ):
@@ -236,19 +236,19 @@ class VG_net(nn.Module):
                       norm_layer(int(ngf * mult / 2)),
                       nn.ReLU(True)]
             if i == n_downsampling-3:
-                self.generator1 = nn.Sequential(*model)         ## generator1
+                self.generator1 = nn.Sequential(*model)         ## generator1    第二次循环既满足条件，所以有两层ConvTranspose2d
                 model = []
 
-        self.base = nn.Sequential(*model)
+        self.base = nn.Sequential(*model)      ## 也是两层transpose2d
         model = []
         model += [nn.Conv2d(ngf/2, output_nc, kernel_size=7, padding=3)]
         model += [nn.Tanh()]
-        self.generator_color = nn.Sequential(*model)       ## generator_color
+        self.generator_color = nn.Sequential(*model)       ## generator_color   Con2d + Tanh
 
         model = []
         model += [nn.Conv2d(ngf/2, 1, kernel_size=7, padding=3)]
         model += [nn.Sigmoid()]
-        self.generator_attention = nn.Sequential(*model)     ## generator_attention
+        self.generator_attention = nn.Sequential(*model)     ## generator_attention   Conv2d + Sigmoid
 
         self.bottle_neck = nn.Sequential(conv2d(1024,128,3,1,1))
 
@@ -266,8 +266,8 @@ class VG_net(nn.Module):
         
         lstm_input = list()
         lmark_atts = list()
-        for step_t in xrange(landmarks.size(1)):
-            landmark = landmarks[:,step_t,:]
+        for step_t in xrange(landmarks.size(1)):                             ## xrange（）返回的是一个生成器，而range（）返回的是一个数组，需要直接开辟空间。所以很大数据时用xrange
+            landmark = landmarks[:,step_t,:]                                ##landmarks存储了很多的landmark，拆出来，一个个计算
             landmark.data = landmark.data.contiguous()
             landmark = self.landmark_encoder(landmark.view(landmark.size(0), -1))
             landmark = landmark.view(landmark.size(0), 1, image_feature.size(2), image_feature.size(3) )
@@ -281,13 +281,13 @@ class VG_net(nn.Module):
             lmark_atts.append(lmark_att)
         lmark_atts =torch.stack(lmark_atts, dim = 1)
         lstm_input = torch.stack(lstm_input, dim = 1)
-        lstm_output, _ = self.convGRU(lstm_input)
+        lstm_output, _ = self.convGRU(lstm_input)                      ## 将处理后的landmark feature放入门控循环单元计算
 
         outputs = []
         atts = []
         colors = []
         for step_t in xrange(landmarks.size(1)):
-            input_t = lstm_output[:,step_t,:,:,:]
+            input_t = lstm_output[:,step_t,:,:,:]                    ##landmark feature经过门控LSTM处理后的output 分别取出来，分别反卷积生成图像，再299行outputs.append(output)
             v_feature1 = self.generator1(input_t)
             v_feature1_f = image_feature1 * (1- lmark_atts[:,step_t,:,:,:] ) + v_feature1 * lmark_atts[:,step_t,:,:,:] 
             base = self.base(v_feature1_f)
