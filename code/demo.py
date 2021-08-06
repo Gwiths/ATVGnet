@@ -104,22 +104,22 @@ def normLmarks(lmarks):
 def crop_image(image_path):
     image = cv2.imread(image_path)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    rects = detector(gray, 1)
+    rects = detector(gray, 1)                           ## 人脸检测器，返回rects为多个人脸两点矩阵框对象
     for (i, rect) in enumerate(rects):
-        shape = predictor(gray, rect)
-        shape = utils.shape_to_np(shape)
-        (x, y, w, h) = utils.rect_to_bb(rect)
+        shape = predictor(gray, rect)                   ## 68点检测
+        shape = utils.shape_to_np(shape)                ## 将shape对象转为数组类型
+        (x, y, w, h) = utils.rect_to_bb(rect)           
         center_x = x + int(0.5 * w)
         center_y = y + int(0.5 * h)
         r = int(0.64 * h)
         new_x = center_x - r
         new_y = center_y - r
-        roi = image[new_y:new_y + 2 * r, new_x:new_x + 2 * r]
+        roi = image[new_y:new_y + 2 * r, new_x:new_x + 2 * r]        ## ！！！ 图片的像素坐标值和数组index是相反的
 
         roi = cv2.resize(roi, (163,163), interpolation = cv2.INTER_AREA)
         scale =  163. / (2 * r)
 
-        shape = ((shape - np.array([new_x,new_y])) * scale)
+        shape = ((shape - np.array([new_x,new_y])) * scale)   ## shape坐标也要跟着变化
 
         return roi, shape 
 def generator_demo_example_lips(img_path):
@@ -127,10 +127,9 @@ def generator_demo_example_lips(img_path):
     landmark_path = os.path.join('../image/', name.replace('jpg', 'npy')) 
     region_path = os.path.join('../image/', name.replace('.jpg', '_region.jpg')) 
     roi, landmark= crop_image(img_path)
-    if  np.sum(landmark[37:39,1] - landmark[40:42,1]) < -9:
-
+    if  np.sum(landmark[37:39,1] - landmark[40:42,1]) < -9:                                    ## 68点中，37-42点是眼睛，包含了上眼睑和下眼睑。所以这部分判断眼睛是否闭上
         # pts2 = np.float32(np.array([template[36],template[45],template[30]]))
-        template = np.load( '../basics/base_68.npy')
+        template = np.load( '../basics/base_68.npy')                                  ## template 应该个标准脸
     else:
         template = np.load( '../basics/base_68_close.npy')
     # pts2 = np.float32(np.vstack((template[27:36,:], template[39,:],template[42,:],template[45,:])))
@@ -139,9 +138,9 @@ def generator_demo_example_lips(img_path):
     # pts1 = np.vstack((landmark[27:36,:], landmark[39,:],landmark[42,:],landmark[45,:]))
     pts1 = np.float32(landmark[27:45,:])
     # pts1 = np.float32(landmark[17:35,:])
-    tform = tf.SimilarityTransform()
-    tform.estimate( pts2, pts1)
-    dst = tf.warp(roi, tform, output_shape=(163, 163))
+    tform = tf.SimilarityTransform()                ## skimage 图像相似变换
+    tform.estimate( pts2, pts1)                     ## 预测从pts2 到 pts1的变换矩阵
+    dst = tf.warp(roi, tform, output_shape=(163, 163))     ##将变换矩阵应用到图像roi上     这个变化主要是将歪掉的脸按照标准脸来转正
 
     dst = np.array(dst * 255, dtype=np.uint8)
     dst = dst[1:129,1:129,:]
@@ -188,9 +187,9 @@ def test():
 
     encoder.eval()
     decoder.eval()
-    test_file = config.in_file
+    test_file = config.in_file                     ## audio file
 
-    example_image, example_landmark = generator_demo_example_lips( config.person)
+    example_image, example_landmark = generator_demo_example_lips( config.person)    ## image
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
@@ -210,7 +209,7 @@ def test():
     example_landmark = example_landmark * 5.0
     example_landmark  = example_landmark - mean.expand_as(example_landmark)
     example_landmark = torch.mm(example_landmark,  pca)
-    speech, sr = librosa.load(test_file, sr=16000)
+    speech, sr = librosa.load(test_file, sr=16000)                         ## 处理音频
     mfcc = python_speech_features.mfcc(speech ,16000,winstep=0.01)
     speech = np.insert(speech, 0, np.zeros(1920))
     speech = np.append(speech, np.zeros(1920))
